@@ -170,10 +170,16 @@ km, labels = fit_kmeans(X_proc, k_selected)
 data["cluster"] = labels
 
 st.subheader("Cluster Profiling (means)")
-numeric_cols = [c for c in data.columns if data[c].dtype != "object" and c != "cluster"]
-profile = data.groupby("cluster")[numeric_cols].mean().round(2)
+
+numeric_cols = data.select_dtypes(include=["number"]).columns.tolist()
+
+if "cluster" in numeric_cols:
+    numeric_cols.remove("cluster")
+
+profile = data.groupby("cluster")[numeric_cols].mean(numeric_only=True).round(2)
 profile["count"] = data.groupby("cluster").size()
 profile = profile.sort_values("count", ascending=False)
+
 st.dataframe(profile)
 
 if mode.startswith("Classic"):
@@ -188,7 +194,8 @@ if "Gender" in data.columns:
     st.dataframe(mix)
 
 st.subheader("Cluster visualization")
-num_vis = [c for c in data.columns if data[c].dtype != "object" and c not in ["cluster", "CustomerID"]]
+num_vis = data.select_dtypes(include=["number"]).columns.tolist()
+num_vis = [c for c in num_vis if c not in ["cluster", "CustomerID"]]
 
 if mode.startswith("Classic"):
     x_feat, y_feat = features_used[0], features_used[1]
